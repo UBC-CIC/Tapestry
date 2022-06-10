@@ -12,3 +12,15 @@ The cloud infrastructre code and deployment guide for the Graph Database version
 | [License](#License)                                   | License details                                           |
 
 
+# High Level Architecture
+
+# Database Schema
+
+# Deployment
+
+# User Guides
+
+# Changelog
+
+# Licence
+This project is distributed under the [MIT License](LICENSE).
