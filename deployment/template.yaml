@@ -124,7 +124,6 @@ Resources:
       DBSubnetGroupName: neptune-subnet-group
       EngineVersion: 1.0.5.1
       Port: 8182
-      #VpcSecurityGroupIds: Check Later
 
   NeptuneDBInstance:
     Type: AWS::Neptune::DBInstance
@@ -138,14 +137,149 @@ Resources:
        DBInstanceIdentifier: tapestry-neptune-instance
        DBSubnetGroupName: neptune-subnet-group 
 
+  # Security Key Generator
+
+  # Role
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+         - Effect: Allow
+           Principal:
+             Service:
+              - lambda.amazonaws.com
+           Action:
+            - sts:AssumeRole
+      Policies:
+         -
+           PolicyName: allowLambdaLogging
+           PolicyDocument:
+             Version: "2012-10-17"
+             Statement:
+               -
+                 Effect: "Allow"
+                 Action:
+                   - "logs:*"
+                 Resource: "*"
+
+  # Function
+
+  KeyGenerator:
+    Type: AWS::Serverless::Function
+    DependsOn: 
+      - LambdaExecutionRole
+    Properties:
+      InlineCode: |
+          const response = require("cfn-response");
+          const randomString = (length, chars) => {
+              var result = '';
+              for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+              return result;
+          }
+          exports.handler = (event, context) =>{
+            const str = randomString(event['ResourceProperties']['Length'], '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+            const responseData = {RandomString: str};
+            response.send(event, context, response.SUCCESS, responseData);
+          };
+      Handler: index.handler
+      Runtime: nodejs16.x
+      FunctionName: generateRandomToken
+      Layers:
+        - !Ref LambdaLayer
+      MemorySize: 128
+      Timeout: 10
+      Role: !GetAtt LambdaExecutionRole.Arn
+      
+
+  # Custom Resource For Security Key
+
+  SecurityString:
+    Type: AWS::CloudFormation::CustomResource
+    DependsOn:
+      - KeyGenerator
+    Properties:
+      Length: 16
+      ServiceToken: !GetAtt KeyGenerator.Arn
+
+
   # Lambda Layer
 
   LambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       ContentUri: ./layer
-      LayerName: LambdaLayerTapestry     
-       
+      LayerName: LambdaLayerTapestry
+
+  # Lambda Authorizer
+
+  Authorizer:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - SecurityString
+    Properties:
+      CodeUri: lambdas/authorization/
+      Handler: index.handler
+      Runtime: nodejs16.x
+      FunctionName: authTapestry
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt TapestryVPC.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref TapestryVPCSubnet1
+          - !Ref TapestryVPCSubnet2
+      Environment:
+        Variables:
+          SECURITY_KEY: !GetAtt SecurityString.RandomString
+
+  # Role for invoking the authorizer
+
+  AuthorizerInvokeRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+     - Authorizer
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: InvokePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: !GetAtt Authorizer.Arn
+
+  # HTTP API 
+
+  NeptuneApi:
+    Type: AWS::Serverless::HttpApi
+    DependsOn:
+      - AuthorizerInvokeRole
+    Properties:
+      Auth:
+        Authorizers:
+          LambdaAuthorizer:
+            AuthorizerPayloadFormatVersion: 2.0
+            EnableSimpleResponses: true
+            FunctionArn: !GetAtt Authorizer.Arn
+            FunctionInvokeRole: !GetAtt AuthorizerInvokeRole.Arn
+            Identity:
+              Headers:
+                - authorization
+        DefaultAuthorizer: LambdaAuthorizer
+
+
+     
   # Lambda Functions
 
   GetTapestryNodes:
@@ -177,6 +311,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /getTapestryNodes
             Method: get
 
@@ -209,6 +344,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /addNode
             Method: post
 
@@ -241,6 +377,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /addEdge
             Method: post
 
@@ -273,6 +410,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /addTapestry
             Method: post
 
@@ -305,6 +443,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /addUser
             Method: post
 
@@ -337,6 +476,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /deleteEdge
             Method: delete
 
@@ -369,6 +509,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /deleteVertex
             Method: delete
 
@@ -401,6 +542,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /isChildNodeOfTapestry
             Method: get
 
@@ -433,6 +575,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /reverseEdge
             Method: post
 
@@ -465,6 +608,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /updateNodeData
             Method: post
 
@@ -497,6 +641,7 @@ Resources:
         TapestryDepAPI:
           Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            ApiId: !Ref NeptuneApi
             Path: /updateUserProgress
             Method: post
 
@@ -515,7 +660,13 @@ Outputs:
   #  Description: "Implicit IAM Role created for Hello World function"
   #  Value: !GetAtt HelloWorldFunctionRole.Arn
   TapestryDepApi:
-    Description: API Gateway URL. Paste this into utitities/class.neptune-helpers.php
-    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+    Description: API Gateway URL. Put in Tapestry's plugin settings.
+    Value: !Sub 
+      - "https://${api}.execute-api.${AWS::Region}.amazonaws.com/"
+      - api: !Ref NeptuneApi
+
+  SecurityKeyOutput:
+    Description: Security Key for the APIs. Put in Tapestry's plugin settings.
+    Value: !GetAtt SecurityString.RandomString
 
 
