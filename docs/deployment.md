@@ -81,7 +81,7 @@ Deploy this changeset? [y/N]: y
 You should now see multiple resources being provisioned in the terminal/command prompt. These are the resources that Tapestry is going to use. Alternatively, you can also check the status of the deployment in the [AWS Console](https://aws.amazon.com/) by signing in, searching for CloudFormation, and selecting your stack under 'Stacks'.
 
 5. Once the deployment is successful, you should see outputs like this in your terminal:
-![Output Image](images/output.jpg "SAM Output")
+![Output Image](images/outputs.jpg "SAM Output")
 Alternatively, you can also see the outputs in the AWS Console:
 * Sign in to the AWS Console.
 * Search for CloudFormation.
