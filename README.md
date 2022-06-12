@@ -26,6 +26,9 @@ The following is the schema of the graph database used in this project.
 
 ![Schema](docs/images/schema.png "Schema")
 
+## Relational Database
+Currently, the relational database stores all data in the wp tables as before. It just additionally stores all this data on Neptune as well, and in some cases, uses the post_ids or meta_ids generated to reference the data on Neptune as well. However, all data is fetched only from Neptune during a GET request. The only exception to this is Tapestry settings. Data entries that earlier had `meta_key = 'tapestry'` are now saved and loaded from the relational database with `meta_key = 'tapestry_settings'`. 
+
 # Deployment
 To deploy this solution, please follow our [Deployment Guide](docs/deployment.md).
 
