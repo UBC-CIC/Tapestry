@@ -13,8 +13,18 @@ The cloud infrastructre code and deployment guide for the Graph Database version
 
 
 # High Level Architecture
+The overall cloud architecture can be summarized as follows.
+
+![Architecture1](docs/images/arch.png)
+
+The next diagram describes the microservice architecture (API Gateway and AWS Lambda functions) in more detail.
+
+![Architecture2](docs/images/arch2.png)
 
 # Database Schema
+The following is the schema of the graph database used in this project.
+
+![Schema](docs/images/schema.png "Schema")
 
 # Deployment
 To deploy this solution, please follow our [Deployment Guide](docs/deployment.md).
