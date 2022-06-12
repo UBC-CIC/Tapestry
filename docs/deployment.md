@@ -95,3 +95,18 @@ Alternatively, you can also see the outputs in the AWS Console:
 
 ![Console Outputs](images/console_outputs.jpg "Console Outputs")
 
+# Step 3: Plugin Configuration
+
+We have now successfully provisioned all cloud resources for the Tapestry plugin to function properly. Now, we need to use the outputs from our CloudFormation deployment, to configure a couple of settings for our plugin.
+
+* Open the WordPress admin dashboard. On your left-hand side, hover over settings. If you set the plugin up correctly, you should see a 'Tapestry' option among the various options. Click on that.
+
+![Settings](images/settings.jpg "Settings")
+
+* You should see a section for Neptune Settings. Copy and paste your CloudFormation outputs into these. Copy and paste the value of 'TapestryDepApi' into the box labelled 'Neptune API endpoint' and the value of 'SecurityKeyOutput' into the box labelled 'Neptune API Security Key'.
+
+![Config](images/config.jpg "Config")
+
+* Click on 'Submit'. You should be logged out of the admin dashboard. Once you log back in, you should be able to use the Tapestry plugin.
+
+Congratulations! You can now begin creating Tapestries using Amazon Neptune as the primary database.
