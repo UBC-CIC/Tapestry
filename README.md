@@ -5,8 +5,8 @@ The cloud infrastructre code and deployment guide for the Graph Database version
 | Index                                                 | Description                                               |
 |:------------------------------------------------------|:----------------------------------------------------------| 
 | [High Level Architecture](#High-Level-Architecture)   | Architecture of the Cloud Component of the plugin         |
-| [Database Schema](#Schema)                            | Graph Database Schema                                     |
-| [Deployment](#Deployment-Guide)                       | How to deploy the project                                 |
+| [Database Schema](#database-schema)                   | Graph Database Schema                                     |
+| [Deployment](#deployment)                             | How to deploy the project                                 |
 | [User Guides](#User-Guides)                           | The working solution                                      |
 | [Changelog](#Changelog)                               | Any changes post publish                                  |
 | [License](#License)                                   | License details                                           |
@@ -17,10 +17,13 @@ The cloud infrastructre code and deployment guide for the Graph Database version
 # Database Schema
 
 # Deployment
+To deploy this solution, please follow our [Deployment Guide](docs/deployment.md).
 
 # User Guides
+For details on how to use the Tapestry plugin, visit this [guide](https://www.home.tapestry-tool.com/guides).
 
 # Changelog
+N/A
 
-# Licence
+# License
 This project is distributed under the [MIT License](LICENSE).
