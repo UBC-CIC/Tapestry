@@ -110,3 +110,19 @@ We have now successfully provisioned all cloud resources for the Tapestry plugin
 3. Click on 'Submit'. You should be logged out of the admin dashboard. Once you log back in, you should be able to use the Tapestry plugin.
 
 Congratulations! You can now begin creating Tapestries using Amazon Neptune as the primary database.
+
+# (Optional) Setting up Amazon SageMaker
+
+Although not required, you can access your Amazon Neptune database through Jupyter Notebooks using Amazon SageMaker. This, however, will incur additional cost. Follow [this](jupyter_guide.md) guide to see how to set that up.
+
+# Troubleshooting
+
+### Error #1
+
+If you encounter the following error:
+
+```bash
+The config profile could not be found
+```
+
+chances are that the AWS CLI has not been correctly configured. Ensure you have correctly done so by following the [AWS CLI setup guide](https://aws.amazon.com/cli/), as indicated in the requirements section.
