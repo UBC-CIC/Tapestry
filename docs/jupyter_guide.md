@@ -28,5 +28,7 @@ Follow these steps to add a SageMaker notebook for use with Amazon Neptune.
 
  ![Create Notebook](images/create_nb.jpg "Create Notebook")
 
+Now that you have a Notebook instance for your database, you can check out [this](../GremlinQueries.ipynb) Jupyter notebook for a few helpful examples of Gremlin queries that you can execute in this database.
+
 
 
