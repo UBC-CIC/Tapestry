@@ -18,9 +18,9 @@ Follow these steps to add a SageMaker notebook for use with Amazon Neptune.
   * Finally, under 'Lifecycle configuration', use 'Use the Neptune default configuration'.
   * Click on 'Create notebook'.
 
-  ![Notebook Config](images/notebook_config1.jpg "Config")
+  ![Notebook Config](images/notebook_config1.jpg "Config1")
 
-  ![Notebook Config](images/notebook_config2.jpg "Config")
+  ![Notebook Config](images/notebook_config2.jpg "Config2")
 
 * Wait for the notebook to be created. Once it is ready, select the notebook and click on 'Open notebook'.
 
