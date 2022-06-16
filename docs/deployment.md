@@ -30,11 +30,11 @@ In this section, we will create all the cloud resources for the Tapestry plugin 
 
 1. Navigate to the directory containing files for the AWS Lambda Layer and install the dependencies. This will create allow us to create a runtime for our AWS          Lambda functions.
    ```bash
-   cd deployment/layer/nodejs
+   cd backend/layer/nodejs
    npm install
    ```
 
-2. Navigate back to deployment folder.
+2. Navigate back to backend folder.
    ```bash
    cd ../../
    ```
