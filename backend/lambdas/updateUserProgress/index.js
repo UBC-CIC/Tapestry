@@ -12,19 +12,16 @@
  * - progressValue: float between 0 and 1 representing the progress of the user for the node
  * - tapestryId: Id of the tapestry 
  */
+
 const gremlin = require('gremlin');
 const async = require('async');
-const {getUrlAndHeaders} = require('gremlin-aws-sigv4/lib/utils');
-
-const traversal = gremlin.process.AnonymousTraversalSource.traversal;
-const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
+const {initDB,errorHandler} = require('/opt/databaseInit');
 const t = gremlin.process.t;
 const __ = gremlin.process.statics;
 const p = gremlin.process.P;
 
 
-let conn = null;
-let g = null;
+let {g,conn} = initDB(process.env);
 
 async function query(request) {
   // Check if user progress exists
@@ -45,89 +42,15 @@ async function doQuery(request) {
 }
 
 
-exports.handler = async (event, context) => {
-
-  const getConnectionDetails = () => {
-    if (process.env['USE_IAM'] == 'true'){
-       return getUrlAndHeaders(
-         process.env['NEPTUNE_ENDPOINT'],
-         process.env['NEPTUNE_PORT'],
-         {},
-         '/gremlin',
-         'wss'); 
-    } else {
-      const database_url = 'wss://' + process.env['NEPTUNE_ENDPOINT'] + ':' + process.env['NEPTUNE_PORT'] + '/gremlin';
-      return { url: database_url, headers: {}};
-    }    
-  };
-
-
-  const createRemoteConnection = () => {
-    const { url, headers } = getConnectionDetails();
-
-    const c = new DriverRemoteConnection(
-      url, 
-      { 
-        mimeType: 'application/vnd.gremlin-v2.0+json', 
-        headers: headers 
-      });  
-
-     c._client._connection.on('close', (code, message) => {
-         console.info(`close - ${code} ${message}`);
-         if (code == 1006){
-           console.error('Connection closed prematurely');
-           throw new Error('Connection closed prematurely');
-         }
-       });  
-
-     return c;     
-  };
-
-  const createGraphTraversalSource = (conn) => {
-    return traversal().withRemote(conn);
-  };
-
-  if (conn == null){
-    console.info("Initializing connection")
-    conn = createRemoteConnection();
-    g = createGraphTraversalSource(conn);
-  }
-  
-  
+exports.handler = async (event, context) => { 
 
   return async.retry(
     { 
       times: 5,
       interval: 1000,
       errorFilter: function (err) { 
-
-        // Add filters here to determine whether error can be retried
-        console.warn('Determining whether retriable error: ' + err.message);
-
-        // Check for connection issues
-        if (err.message.startsWith('WebSocket is not open')){
-          console.warn('Reopening connection');
-          conn.close();
-          conn = createRemoteConnection();
-          g = createGraphTraversalSource(conn);
-          return true;
-        }
-
-        // Check for ConcurrentModificationException
-        if (err.message.includes('ConcurrentModificationException')){
-          console.warn('Retrying query because of ConcurrentModificationException');
-          return true;
-        }
-
-        // Check for ReadOnlyViolationException
-        if (err.message.includes('ReadOnlyViolationException')){
-          console.warn('Retrying query because of ReadOnlyViolationException');
-          return true;
-        }
-
-        return false; 
+        errorHandler(err,process.env);
       }
-
     }, 
     async ()=>{
       var request = JSON.parse(event.body);

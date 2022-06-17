@@ -1,3 +1,8 @@
+/**
+ *The following is the Gremlin connection set-up for the Gremlin-Lambda combination,
+ * as recommended by AWS Documentation: https://docs.aws.amazon.com/neptune/latest/userguide/lambda-functions-examples.html
+ */
+
 const gremlin = require('gremlin');
 const {getUrlAndHeaders} = require('gremlin-aws-sigv4/lib/utils');
 
@@ -46,6 +51,7 @@ const createGraphTraversalSource = (conn) => {
   return traversal().withRemote(conn);
 };
 
+// Function returns the grpah traveral source as g, which is used in querying the database
 const initDB = function(env){
     if (conn == null){
         console.info("Initializing connection")
@@ -58,6 +64,31 @@ const initDB = function(env){
     };
 }
 
+const errorHandler = function(err,env){
+  // Add filters here to determine whether error can be retried
+  console.warn('Determining whether retriable error: ' + err.message);
+  // Check for connection issues
+  if (err.message.startsWith('WebSocket is not open')){
+    console.warn('Reopening connection');
+    conn.close();
+    conn = createRemoteConnection(env);
+    g = createGraphTraversalSource(conn);
+    return true;
+  }
+  // Check for ConcurrentModificationException
+  if (err.message.includes('ConcurrentModificationException')){
+    console.warn('Retrying query because of ConcurrentModificationException');
+    return true;
+  }
+  // Check for ReadOnlyViolationException
+  if (err.message.includes('ReadOnlyViolationException')){
+    console.warn('Retrying query because of ReadOnlyViolationException');
+    return true;
+  }
+  return false; 
+}
+
 module.exports = {
-    initDB: initDB
+    initDB: initDB,
+    errorHandler: errorHandler
 }
